@@ -1,15 +1,19 @@
-FROM eclipse-temurin:22-jdk as build
+FROM eclipse-temurin:21-jdk as build
 
+# folder in action github
 WORKDIR /work
 
 # Add User
-RUN adduser --system --group dockergs
+RUN useradd --system --create-home --home-dir /home/dockergs --shell /bin/bash dockergs
 
-# Copy source code to work/dockergs
+RUN ls -a && echo 91e
+
+# Copy source code to folder tmp to folder work/dockergs
 COPY --chown=dockergs:dockergs tmp ./dockergs
 
 # Make jar
 RUN ls -a &&\
+    echo 91d &&\
     cd dockergs &&\
     chmod +x gradlew &&\
     ./gradlew jar &&\
@@ -17,7 +21,7 @@ RUN ls -a &&\
     # rename stuff
     cp -rTf grasscutter*.jar grasscutter.jar
 
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:21-jdk
 RUN  \
     apt update && apt-get upgrade -y && apt-get -y install git curl nodejs &&\
     # Install json (TODO: remove this) utilities for config.json
@@ -31,23 +35,26 @@ WORKDIR /home
 EXPOSE 443 22102 80
 
 # Add User
-RUN adduser --system --group dockergs
+RUN useradd --system --create-home --home-dir /home/dockergs --shell /bin/bash dockergs
+
+RUN ls -a && echo 91a
 
 # Copy jar file
-COPY --chown=dockergs:dockergs --from=build /work/dockergs/grasscutter.jar ./dockergs
+COPY --chown=dockergs:dockergs --from=build /work/dockergs/grasscutter.jar ./dockergs/grasscutter.jar
+
+RUN ls -a && echo 91b
 
 # Copy Version
 COPY --chown=dockergs:dockergs work_gc ./dockergs
 
 # Copy Entrypoint
-COPY --chown=dockergs:dockergs entrypoint_gc.sh ./dockergs
-
-# Testing
-# RUN ls dockergs
+COPY --chown=dockergs:dockergs entrypoint_gc.sh ./dockergs/entrypoint_gc.sh
 
 # Make Folder
 RUN mkdir -p ./dockergs/resources &&\
     chown -R dockergs:dockergs ./dockergs/resources
+
+RUN ls dockergs -a && echo 91c
 
 # User
 USER dockergs
